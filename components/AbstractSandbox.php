@@ -1,6 +1,6 @@
 <?php
 
-namespace pvsaintpe\jsonapi;
+namespace pvsaintpe\jsonapi\components;
 
 use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\DocBlock\Tag\ParamTag;
@@ -12,10 +12,10 @@ use ReflectionClass;
 use pvsaintpe\helpers\Inflector;
 
 /**
- * Class SandboxApi
- * @package pvsaintpe\jsonapi
+ * Class AbstractSandbox
+ * @package pvsaintpe\jsonapi\components
  */
-abstract class SandboxApi
+abstract class AbstractSandbox
 {
     public static $module;
     public static $controllers = [];

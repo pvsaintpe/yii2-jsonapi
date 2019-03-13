@@ -2,7 +2,8 @@
 
 namespace pvsaintpe\jsonapi\components;
 
-use pvsaintpe\jsonapi\Api;
+use kartik\base\Config;
+use pvsaintpe\jsonapi\components\AbstractApi;
 use pvsaintpe\jsonapi\configs\Configs;
 use Yii;
 use yii\base\InlineAction;
@@ -94,7 +95,9 @@ abstract class AbstractController extends Controller
     public function beforeAction($action)
     {
         if (parent::beforeAction($action)) {
-            $api = Api::instance()
+            /** @var AbstractApi $apiClass */
+            $apiClass = Configs::instance()->apiClass;
+            $api = $apiClass::instance()
                 ->setRequiredHeaders($this->getRequiredHeaders())
                 ->setDepends($this->getDepends())
                 ->setHeaderMap($this->getHeaderMap())

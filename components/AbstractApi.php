@@ -1,6 +1,6 @@
 <?php
 
-namespace pvsaintpe\jsonapi;
+namespace pvsaintpe\jsonapi\components;
 
 use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\DocBlock\Tag\ParamTag;
@@ -10,10 +10,10 @@ use pvsaintpe\helpers\Inflector;
 use Yii;
 
 /**
- * Class Api
- * @package pvsaintpe\jsonapi
+ * Class AbstractApi
+ * @package pvsaintpe\jsonapi\components
  */
-class Api
+class AbstractApi
 {
     /**
      * Обязательные заголовки
@@ -51,8 +51,8 @@ class Api
     private static $instance;
 
     /**
-     * @return Api|object
-     * @throws \yii\base\InvalidConfigException
+     * @return AbstractApi|object
+     * @throws
      */
     public static function instance()
     {

@@ -2,6 +2,7 @@
 
 namespace pvsaintpe\jsonapi\configs;
 
+use pvsaintpe\jsonapi\components\AbstractApi;
 use pvsaintpe\jsonapi\components\AbstractController;
 use pvsaintpe\jsonapi\exceptions\CommonException;
 use pvsaintpe\search\components\ActiveRecord;
@@ -75,6 +76,11 @@ class Configs extends BaseObject
      * @var string
      */
     public $pageError = 'Страница не найдена';
+
+    /**
+     * @var string
+     */
+    public $apiClass = AbstractApi::class;
 
     /**
      * @var string
