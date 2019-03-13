@@ -1,32 +1,38 @@
 <?php
 
-namespace api\helpers;
+namespace pvsaintpe\jsonapi;
 
 use phpDocumentor\Reflection\DocBlock;
+use phpDocumentor\Reflection\DocBlock\Tag\ParamTag;
+use pvsaintpe\jsonapi\configs\Configs;
 use Yii;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
 use pvsaintpe\helpers\Inflector;
-use yii\web\NotFoundHttpException;
 
 /**
  * Class SandboxApi
- * @package api\helpers
+ * @package pvsaintpe\jsonapi
  */
-class SandboxApi
+abstract class SandboxApi
 {
     public static $module;
     public static $controllers = [];
     public static $modules = [];
 
     /**
-     * @return mixed
+     * @return string
      */
     protected static function getAcceptLanguage()
     {
         return Yii::$app->language;
     }
+
+    /**
+     * @return array
+     */
+    abstract public static function getCustomParams();
 
     /**
      * @param $module
@@ -37,7 +43,7 @@ class SandboxApi
     {
         static::$module = $module;
 
-        $iterator = new RecursiveDirectoryIterator(Yii::getAlias('@api/modules/' . $module));
+        $iterator = new RecursiveDirectoryIterator(Yii::getAlias(Configs::instance()->sourcePath . $module));
         $iterator = new RecursiveIteratorIterator($iterator, \RecursiveIteratorIterator::SELF_FIRST);
 
         foreach ($iterator as $filename => $file) {
@@ -45,9 +51,7 @@ class SandboxApi
                 $className = static::parseClassFile($filename);
                 if ($className && class_exists($className)) {
                     $reflectionClass = new ReflectionClass($className);
-                    if ($reflectionClass->isSubclassOf('JsonRpc2\Controller')
-                        || $reflectionClass->isSubclassOf('api\components\controllers\base\JsonRpcController')
-                    ) {
+                    if ($reflectionClass->isSubclassOf(Configs::instance()->controllerClass)) {
                         static::$controllers[] = $className;
                     }
                 }
@@ -67,7 +71,7 @@ class SandboxApi
             $headers = [];
             $requiredHeaders = $reflectionClass->getDefaultProperties()['requiredHeaders'] ?? [];
             foreach ($requiredHeaders as $requiredHeader) {
-                $getter = \common\helpers\Inflector::gettify($requiredHeader);
+                $getter = Inflector::gettify($requiredHeader);
                 $headers[$requiredHeader] = static::$getter();
             }
 
@@ -103,9 +107,9 @@ class SandboxApi
                 $phpDoc = new DocBlock($method->getDocComment());
                 $skip = false;
                 foreach ($phpDoc->getTags() as $tag) {
-                    if ($tag instanceof DocBlock\Tag\ParamTag) {
+                    if ($tag instanceof ParamTag) {
                         /**
-                         * @var $tag \phpDocumentor\Reflection\DocBlock\Tag\ParamTag
+                         * @var $tag ParamTag
                          */
                         $defaultValue = trim($tag->getDescription());
                         if (preg_match('~\(.+\)~', $defaultValue, $matches)) {
@@ -144,7 +148,7 @@ class SandboxApi
                     }
 
                     if ($tag->getName() == 'headers') {
-                        $paramTag = new DocBlock\Tag\ParamTag('param', $tag->getContent());
+                        $paramTag = new ParamTag('param', $tag->getContent());
                         $header = preg_replace('/^\$/', '', $paramTag->getVariableName());
                         $action['headers'][$header] = $paramTag->getDescription();
                     }
@@ -167,7 +171,6 @@ class SandboxApi
                 }
 
                 if (!$skip) {
-                    //$action['headers']['Accept-Language'] = Yii::$app->language;
                     $module['methods'][] = $action;
                 }
             }
@@ -177,11 +180,7 @@ class SandboxApi
             }
         }
 
-        return static::toJson([
-            'modules' => static::$modules,
-            'apps' => static::getApps(),
-            'app_id' => static::getApp()
-        ]);
+        return static::toJson(array_merge(['modules' => static::$modules], static::getCustomParams()));
     }
 
     /**

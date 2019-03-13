@@ -2,9 +2,8 @@
 
 namespace pvsaintpe\jsonapi\configs;
 
+use pvsaintpe\jsonapi\components\AbstractController;
 use pvsaintpe\jsonapi\exceptions\CommonException;
-use pvsaintpe\jsonapi\exceptions\InvalidHeaderException;
-use pvsaintpe\jsonapi\exceptions\MissingHeaderException;
 use pvsaintpe\search\components\ActiveRecord;
 use Yii;
 use yii\base\BaseObject;
@@ -17,8 +16,7 @@ use pvsaintpe\helpers\ArrayHelper;
  * ```
  * return [
  *     'jsonapi.configs' => [
- *         'db' => 'customDb',
- *         'storageDb' => 'customDb',
+ *          'sourcePath' => '@app/modules/'
  *     ]
  * ];
  * ```
@@ -46,12 +44,37 @@ class Configs extends BaseObject
     /**
      * @var string
      */
+    public $sourcePath;
+
+    /**
+     * @var string
+     */
     public $compareError = 'Неверный заголовок';
 
     /**
      * @var string
      */
     public $checkError = 'Ошибка проверки заголовка';
+
+    /**
+     * @var string
+     */
+    public $headersError = 'Неверные заголовки';
+
+    /**
+     * @var string
+     */
+    public $requestError = 'Неверный запрос';
+
+    /**
+     * @var string
+     */
+    public $methodError = 'Метод не найден';
+
+    /**
+     * @var string
+     */
+    public $pageError = 'Страница не найдена';
 
     /**
      * @var string
@@ -64,16 +87,9 @@ class Configs extends BaseObject
     public $commonException = CommonException::class;
 
     /**
-     * @var string Common Exception Class name.
+     * @var string
      */
-    public $invalidHeaderException = InvalidHeaderException::class;
-
-    /**
-     * @var string Common Exception Class name.
-     */
-    public $missingHeaderException = MissingHeaderException::class;
-
-    public $controllerClass = 'api\components\controllers\base\JsonRpcController';
+    public $controllerClass = AbstractController::class;
 
     /**
      * @var self Instance of self
@@ -104,5 +120,4 @@ class Configs extends BaseObject
 
         return self::$instance;
     }
-
 }

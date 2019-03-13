@@ -1,6 +1,6 @@
 <?php
 
-namespace pvsaintpe\jsonapi\components;
+namespace pvsaintpe\jsonapi;
 
 use phpDocumentor\Reflection\DocBlock;
 use phpDocumentor\Reflection\DocBlock\Tag\ParamTag;
@@ -11,7 +11,7 @@ use Yii;
 
 /**
  * Class Api
- * @package pvsaintpe\jsonapi\components
+ * @package pvsaintpe\jsonapi
  */
 class Api
 {
@@ -160,13 +160,9 @@ class Api
                 throw new $commonException(Configs::instance()->checkError);
             }
         }
-        if ($this->getMissingHeaders()) {
-            $missingException = Configs::instance()->missingHeaderException;
-            throw new $missingException();
-        }
-        if ($this->getInvalidHeaders()) {
-            $invalidException = Configs::instance()->invalidHeaderException;
-            throw new $invalidException();
+        if ($this->getMissingHeaders() || $this->getInvalidHeaders()) {
+            $commonException = Configs::instance()->commonException;
+            throw new $commonException(Configs::instance()->headersError);
         }
         $this->checkDepends();
         return true;

@@ -21,6 +21,7 @@
     "pvsaintpe/yii2-helpers": "*",
     "pvsaintpe/yii2-search": "5.*",
     "phpdocumentor/reflection": "*",
+    "cranetm/yii2-json-rpc-2.0": "1.2.4",
     "codeception/codeception": "2.*"
   },
   "autoload": {

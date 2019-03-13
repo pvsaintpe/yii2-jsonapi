@@ -1,40 +1,138 @@
 <?php
 
-namespace api\components\controllers\base;
+namespace pvsaintpe\jsonapi\components;
 
+use pvsaintpe\jsonapi\Api;
+use pvsaintpe\jsonapi\configs\Configs;
 use Yii;
 use yii\base\InlineAction;
-use yii\base\InvalidParamException;
+use yii\base\InvalidArgumentException;
 use yii\helpers\Json;
 use yii\web\BadRequestHttpException;
 use yii\web\HttpException;
 use yii\web\Response;
 use JsonRpc2\Exception;
 use JsonRpc2\Helper;
+use yii\web\Controller;
 
 /**
- * Class JsonRpcController
- * @package api\components\controllers\base
+ * Class AbstractController
+ * @package pvsaintpe\jsonapi\components
  */
-class JsonRpcController extends \yii\web\Controller
+abstract class AbstractController extends Controller
 {
+    /**
+     * @var bool
+     */
     public $enableCsrfValidation = false;
 
-    /** @var array Stores information about param's types and method's return type */
+    /**
+     * @var array Stores information about param's types and method's return type
+     */
     private $methodInfo = [
         'params' => [],
         'return' => []
     ];
 
-    /** @var \stdClass Contains parsed JSON-RPC 2.0 request object */
+    /**
+     * @var \stdClass Contains parsed JSON-RPC 2.0 request object
+     */
     protected $requestObject;
+
+    /**
+     * @var array
+     */
+    protected $missingHeaders = [];
+
+    /**
+     * @var array
+     */
+    protected $invalidHeaders = [];
+
+    /**
+     * Обязательные заголовки
+     * @return array
+     *
+     * @example ```php
+     *   ['Accept-Language']
+     * ```
+     */
+    abstract public function getRequiredHeaders();
+
+    /**
+     * Зависимости заголовков
+     * @return array
+     *
+     * @example ```php
+     *    [
+     *      'Auth-Token' => [
+     *        'app_group_id' => [
+     *           'relation' => 'playground',
+     *           'attribute' => 'app_group_id',
+     *           'errorCode' => Error::INVALID_PLAYGROUND_ID,
+     *        ]
+     *      ]
+     *    ]
+     * ```
+     */
+    abstract public function getDepends();
+
+    /**
+     * @var array
+     *
+     * @example ```php
+     *    ['Auth-Token' => 'Client']
+     * ```
+     */
+    abstract public function getHeaderMap();
+
+    /**
+     * @param $action
+     * @return bool
+     * @throws
+     */
+    public function beforeAction($action)
+    {
+        if (parent::beforeAction($action)) {
+            $api = Api::instance()
+                ->setRequiredHeaders($this->getRequiredHeaders())
+                ->setDepends($this->getDepends())
+                ->setHeaderMap($this->getHeaderMap())
+            ;
+
+            try {
+                $api->validateHeaders($action);
+            } catch (\Exception $e) {
+                $this->missingHeaders = $api->getMissingHeaders();
+                $this->invalidHeaders = $api->getInvalidHeaders();
+                throw $e;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @return mixed
+     */
+    final protected function getInvalidHeaders()
+    {
+        return $this->invalidHeaders;
+    }
+
+    /**
+     * @return mixed
+     */
+    final protected function getMissingHeaders()
+    {
+        return $this->missingHeaders;
+    }
 
     /**
      * Validates, runs Action and returns result in JSON-RPC 2.0 format
      * @param string $id the ID of the action to be executed.
      * @param array $params the parameters (name-value pairs) to be passed to the action.
-     * @throws \Exception
-     * @throws \yii\web\HttpException
+     * @throws
      * @return mixed the result of the action.
      * @see createAction()
      */
@@ -44,7 +142,7 @@ class JsonRpcController extends \yii\web\Controller
 
         try {
             $requestObject = Json::decode(file_get_contents('php://input'), false);
-        } catch (InvalidParamException $e) {
+        } catch (InvalidArgumentException $e) {
             $requestObject = null;
         }
         $isBatch = is_array($requestObject);
@@ -52,7 +150,7 @@ class JsonRpcController extends \yii\web\Controller
         $resultData = null;
         if (empty($requests)) {
             $isBatch = false;
-            $resultData = [Helper::formatResponse(null, new Exception("Invalid Request", Exception::INVALID_REQUEST))];
+            $resultData = [Helper::formatResponse(null, new Exception(Configs::instance()->requestError, Exception::INVALID_REQUEST))];
         } else {
             foreach ($requests as $request) {
                 if ($response = $this->getActionResponse($request)) {
@@ -108,7 +206,7 @@ class JsonRpcController extends \yii\web\Controller
     {
         $action = parent::createAction($id);
         if (empty($action)) {
-            throw new Exception("Method not found", Exception::METHOD_NOT_FOUND);
+            throw new Exception(Configs::instance()->methodError, Exception::METHOD_NOT_FOUND);
         }
 
         $this->prepareActionParams($action);
@@ -173,7 +271,7 @@ class JsonRpcController extends \yii\web\Controller
 
             return $args;
         } catch (BadRequestHttpException $e) {
-            throw new Exception("Invalid Request", Exception::INVALID_REQUEST);
+            throw new Exception(Configs::instance()->requestError, Exception::INVALID_REQUEST);
         }
     }
 
@@ -185,7 +283,7 @@ class JsonRpcController extends \yii\web\Controller
     {
         list($contentType) = explode(";", Yii::$app->request->getContentType()); //cut charset
         if (!empty($id) || !Yii::$app->request->getIsPost() || empty($contentType) || $contentType != "application/json")
-            throw new HttpException(404, "Page not found");
+            throw new HttpException(404, Configs::instance()->pageError);
     }
 
     /**
@@ -203,7 +301,7 @@ class JsonRpcController extends \yii\web\Controller
             || !isset($requestObject->jsonrpc) || $requestObject->jsonrpc !== '2.0'
             || empty($requestObject->method) || "string" != gettype($requestObject->method)
         ) {
-            throw new Exception("Invalid Request", Exception::INVALID_REQUEST);
+            throw new Exception(Configs::instance()->requestError, Exception::INVALID_REQUEST);
         }
 
         $this->requestObject = $requestObject;

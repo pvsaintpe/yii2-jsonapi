@@ -8,7 +8,7 @@ use yii\base\Application;
 
 /**
  * Class Bootstrap
- * @package pvsaintpe\log
+ * @package pvsaintpe\jsonapi
  */
 class Bootstrap implements BootstrapInterface
 {
