@@ -56,7 +56,10 @@ abstract class AbstractController extends Controller
      *   ['Accept-Language']
      * ```
      */
-    abstract public function getRequiredHeaders();
+    public static function getRequiredHeaders()
+    {
+        return [];
+    }
 
     /**
      * Зависимости заголовков
@@ -96,9 +99,9 @@ abstract class AbstractController extends Controller
             /** @var AbstractApi $apiClass */
             $apiClass = Configs::instance()->apiClass;
             $api = $apiClass::instance()
-                ->setRequiredHeaders($this->getRequiredHeaders())
-                ->setDepends($this->getDepends())
-                ->setHeaderMap($this->getHeaderMap())
+                ->setRequiredHeaders(static::getRequiredHeaders())
+                ->setDepends(static::getDepends())
+                ->setHeaderMap(static::getHeaderMap())
             ;
 
             try {

@@ -17,7 +17,8 @@ use pvsaintpe\helpers\ArrayHelper;
  * ```
  * return [
  *     'jsonapi.configs' => [
- *          'sourcePath' => '@app/modules/'
+ *          'sourcePath' => '@app/modules/',
+ *          'apiClass' => '...'
  *     ]
  * ];
  * ```
@@ -25,15 +26,15 @@ use pvsaintpe\helpers\ArrayHelper;
  * or use [[\Yii::$container]]
  *
  * ```
- * Yii::$container->set('pvsaintpe\jsonapi\components\Configs',[
- *     'db' => 'customDb',
- *     'storageDb' => 'customDb',
+ * Yii::$container->set('pvsaintpe\jsonapi\configs\Configs',[
+ *     'sourcePath' => '@app/modules/',
+ *     'apiClass' => '...',
  *     ...
  * ]);
  * ```
  *
  * @author Pavel Veselov <pvsaintpe@icloud.com>
- * @since 1.0
+ * @since 1.*
  */
 class Configs extends BaseObject
 {
@@ -111,7 +112,7 @@ class Configs extends BaseObject
 
     /**
      * @return object|Configs
-     * @throws \yii\base\InvalidConfigException
+     * @throws
      */
     public static function instance()
     {
