@@ -32,7 +32,10 @@ abstract class AbstractSandbox
     /**
      * @return array
      */
-    abstract public static function getCustomParams();
+    public static function getCustomParams()
+    {
+        return [];
+    }
 
     /**
      * @param $module
