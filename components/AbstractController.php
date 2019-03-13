@@ -2,8 +2,6 @@
 
 namespace pvsaintpe\jsonapi\components;
 
-use kartik\base\Config;
-use pvsaintpe\jsonapi\components\AbstractApi;
 use pvsaintpe\jsonapi\configs\Configs;
 use Yii;
 use yii\base\InlineAction;
