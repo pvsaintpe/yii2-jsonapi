@@ -19,7 +19,7 @@
     "php": ">=7.0.0",
     "yiisoft/yii2": "2.0.16.1",
     "pvsaintpe/yii2-helpers": "*",
-    "pvsaintpe/yii2-search": "5.*",
+    "pvsaintpe/yii2-search": "*",
     "phpdocumentor/reflection": "*",
     "cranetm/yii2-json-rpc-2.0": "1.2.4",
     "codeception/codeception": "2.*"
