@@ -56,10 +56,7 @@ abstract class AbstractController extends Controller
      *   ['Accept-Language']
      * ```
      */
-    public static function getRequiredHeaders()
-    {
-        return [];
-    }
+    abstract public function getRequiredHeaders();
 
     /**
      * Зависимости заголовков
@@ -85,6 +82,9 @@ abstract class AbstractController extends Controller
      * @example ```php
      *    ['Auth-Token' => 'Client']
      * ```
+     *
+     * Затем в вашем классе АПИ (extends AbstractApi) необходимо реализовать методы:
+     *  -
      */
     abstract public function getHeaderMap();
 
