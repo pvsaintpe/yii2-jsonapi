@@ -72,7 +72,9 @@ abstract class AbstractSandbox
             ];
 
             $headers = [];
-            $requiredHeaders = $controller::getRequiredHeaders() ?? [];
+            /** @var AbstractController $controllerModel */
+            $controllerModel = new $controller;
+            $requiredHeaders = $controllerModel->getRequiredHeaders() ?? [];
             foreach ($requiredHeaders as $requiredHeader) {
                 $getter = Inflector::gettify($requiredHeader);
                 $headers[$requiredHeader] = static::$getter();
