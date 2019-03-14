@@ -56,7 +56,7 @@ abstract class AbstractController extends Controller
      *   ['Accept-Language']
      * ```
      */
-    abstract public function getRequiredHeaders();
+    public $requiredHeaders = [];
 
     /**
      * Зависимости заголовков
@@ -74,7 +74,7 @@ abstract class AbstractController extends Controller
      *    ]
      * ```
      */
-    abstract public function getDepends();
+    public $depends = [];
 
     /**
      * @var array
@@ -86,7 +86,7 @@ abstract class AbstractController extends Controller
      * Затем в вашем классе АПИ (extends AbstractApi) необходимо реализовать методы:
      *  -
      */
-    abstract public function getHeaderMap();
+    public $headerMap = [];
 
     /**
      * @param $action
@@ -99,9 +99,9 @@ abstract class AbstractController extends Controller
             /** @var AbstractApi $apiClass */
             $apiClass = Configs::instance()->apiClass;
             $api = $apiClass::instance()
-                ->setRequiredHeaders(static::getRequiredHeaders())
-                ->setDepends(static::getDepends())
-                ->setHeaderMap(static::getHeaderMap())
+                ->setRequiredHeaders($this->requiredHeaders)
+                ->setDepends($this->depends)
+                ->setHeaderMap($this->headerMap)
             ;
 
             try {
