@@ -3,6 +3,7 @@
 namespace pvsaintpe\jsonapi\components;
 
 use pvsaintpe\jsonapi\configs\Configs;
+use pvsaintpe\jsonapi\traits\ApiAwareTrait;
 use Yii;
 use yii\base\InlineAction;
 use yii\base\InvalidArgumentException;
@@ -20,6 +21,8 @@ use yii\web\Controller;
  */
 abstract class AbstractController extends Controller
 {
+    use ApiAwareTrait;
+
     /**
      * @var bool
      */
@@ -39,56 +42,6 @@ abstract class AbstractController extends Controller
     protected $requestObject;
 
     /**
-     * @var array
-     */
-    protected $missingHeaders = [];
-
-    /**
-     * @var array
-     */
-    protected $invalidHeaders = [];
-
-    /**
-     * Обязательные заголовки
-     * @return array
-     *
-     * @example ```php
-     *   ['Accept-Language']
-     * ```
-     */
-    public $requiredHeaders = [];
-
-    /**
-     * Зависимости заголовков
-     * @return array
-     *
-     * @example ```php
-     *    [
-     *      'Auth-Token' => [
-     *        'app_group_id' => [
-     *           'relation' => 'playground',
-     *           'attribute' => 'app_group_id',
-     *           'errorCode' => Error::INVALID_PLAYGROUND_ID,
-     *        ]
-     *      ]
-     *    ]
-     * ```
-     */
-    public $depends = [];
-
-    /**
-     * @var array
-     *
-     * @example ```php
-     *    ['Auth-Token' => 'Client']
-     * ```
-     *
-     * Затем в вашем классе АПИ (extends AbstractApi) необходимо реализовать методы:
-     *  -
-     */
-    public $headerMap = [];
-
-    /**
      * @param $action
      * @return bool
      * @throws
@@ -96,40 +49,9 @@ abstract class AbstractController extends Controller
     public function beforeAction($action)
     {
         if (parent::beforeAction($action)) {
-            /** @var AbstractApi $apiClass */
-            $apiClass = Configs::instance()->apiClass;
-            $api = $apiClass::instance()
-                ->setRequiredHeaders($this->requiredHeaders)
-                ->setDepends($this->depends)
-                ->setHeaderMap($this->headerMap)
-            ;
-
-            try {
-                $api->validateHeaders($action);
-            } catch (\Exception $e) {
-                $this->missingHeaders = $api->getMissingHeaders();
-                $this->invalidHeaders = $api->getInvalidHeaders();
-                throw $e;
-            }
-            return true;
+            return $this->validateAction($action);
         }
         return false;
-    }
-
-    /**
-     * @return mixed
-     */
-    final protected function getInvalidHeaders()
-    {
-        return $this->invalidHeaders;
-    }
-
-    /**
-     * @return mixed
-     */
-    final protected function getMissingHeaders()
-    {
-        return $this->missingHeaders;
     }
 
     /**
