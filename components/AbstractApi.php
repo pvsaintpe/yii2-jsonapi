@@ -22,6 +22,12 @@ class AbstractApi
     private $requiredHeaders = [];
 
     /**
+     * Правила валидации заголовков
+     * @var array
+     */
+    private $headerRules = [];
+
+    /**
      * Маппинг для заголовков и методов их проверки
      * @var array
      */
@@ -73,6 +79,17 @@ class AbstractApi
     }
 
     /**
+     * @param string $name
+     * @param array $rule
+     * @return $this
+     */
+    public function setHeaderRule($name, $rule)
+    {
+        $this->headerRules[$name] = $rule;
+        return $this;
+    }
+
+    /**
      * @param array $requiredHeaders
      * @return $this
      */
@@ -111,6 +128,11 @@ class AbstractApi
                 $header = preg_replace('/^\$/', '', $paramTag->getVariableName());
                 $headers[] = $header;
             }
+            if ($tag->getName() == 'headerRule') {
+                $rule = json_decode(trim($tag->getContent(), '()'), 1);
+                $name = array_shift($rule);
+                $this->setHeaderRule($name, $rule);
+            }
         }
         return array_merge($this->requiredHeaders, array_unique($headers));
     }
@@ -124,8 +146,11 @@ class AbstractApi
     public function validateHeaders($action)
     {
         foreach ($this->getHeaders($action) as $header) {
-            if (!$value = Yii::$app->request->getHeaders()->get($header)) {
-                $this->missingHeaders[] = $header;
+            $value = Yii::$app->request->getHeaders()->get($header, 'null');
+            if (!$value || $value === 'null') {
+                if (!$this->validateRule($header, $value)) {
+                    $this->missingHeaders[] = $header;
+                }
                 continue;
             }
             $methodCheck = Inflector::checkify($header);
@@ -166,6 +191,18 @@ class AbstractApi
         }
         $this->checkDepends();
         return true;
+    }
+
+    /**
+     * @param string $header
+     * @param mixed $value
+     * @return bool
+     */
+    public function validateRule($header, $value)
+    {
+        $rule = $this->headerRules[$header] ?? [];
+        $skipEmpty = $rule['skipEmpty'] ?? false;
+        return ($skipEmpty == 'true' || $skipEmpty === true);
     }
 
     /**
