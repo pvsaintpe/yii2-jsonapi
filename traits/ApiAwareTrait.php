@@ -27,54 +27,27 @@ trait ApiAwareTrait
     protected $invalidParams = [];
 
     /**
-     * Обязательные заголовки
-     * @return array
-     *
-     * @example ```php
-     *   ['Accept-Language']
-     * ```
+     * @var array
      */
     public $requiredHeaders = [];
 
     /**
-     * Зависимости заголовков
-     * @return array
-     *
-     * @example ```php
-     *    [
-     *      'Auth-Token' => [
-     *        'app_group_id' => [
-     *           'relation' => 'playground',
-     *           'attribute' => 'app_group_id',
-     *           'errorCode' => Error::INVALID_PLAYGROUND_ID,
-     *        ]
-     *      ]
-     *    ]
-     * ```
+     * @var array
      */
-    public $depends = [];
+    public $headerDepends = [];
 
     /**
      * @var array
-     *
-     * @example ```php
-     *    ['Auth-Token' => 'Client']
-     * ```
-     *
-     * Затем в вашем классе АПИ (extends AbstractApi) необходимо реализовать методы:
-     *  -
+     */
+    public $paramDepends = [];
+
+    /**
+     * @var array
      */
     public $headerMap = [];
 
     /**
      * @var array
-     *
-     * @example ```php
-     *    ['Auth-Token' => 'Client']
-     * ```
-     *
-     * Затем в вашем классе АПИ (extends AbstractApi) необходимо реализовать методы:
-     *  -
      */
     public $paramMap = [];
 
@@ -89,13 +62,15 @@ trait ApiAwareTrait
         $apiClass = Configs::instance()->apiClass;
         $api = $apiClass::instance()
             ->setRequiredHeaders($this->requiredHeaders)
-            ->setDepends($this->depends)
+            ->setHeaderDepends($this->headerDepends)
             ->setHeaderMap($this->headerMap)
+            ->setParamDepends($this->paramDepends)
             ->setParamMap($this->paramMap)
+            ->setHeaders($action)
         ;
 
         try {
-            return $api->validateHeaders($action) && $api->validateParams($action);
+            return $api->validateHeaders() && $api->validateParams();
         } catch (\Exception $e) {
             $this->missingHeaders = $api->getMissingHeaders();
             $this->invalidHeaders = $api->getInvalidHeaders();

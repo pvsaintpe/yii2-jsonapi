@@ -49,7 +49,13 @@ class AbstractApi
      * Типы зависимостей заголовков
      * @var array
      */
-    private $depends = [];
+    private $headerDepends = [];
+
+    /**
+     * Типы зависимостей параметров
+     * @var array
+     */
+    private $paramDepends = [];
 
     /**
      * Пропущенные заголовки (не хватает)
@@ -68,6 +74,16 @@ class AbstractApi
      * @var array
      */
     private $invalidParams = [];
+
+    /**
+     * @var array
+     */
+    private $headers = [];
+
+    /**
+     * @var object
+     */
+    private $action;
 
     /**
      * @var self Instance of self
@@ -141,19 +157,29 @@ class AbstractApi
      * @param array $depends
      * @return $this
      */
-    public function setDepends($depends)
+    public function setHeaderDepends($depends)
     {
-        $this->depends = $depends;
+        $this->headerDepends = $depends;
+        return $this;
+    }
+
+    /**
+     * @param array $depends
+     * @return $this
+     */
+    public function setParamDepends($depends)
+    {
+        $this->paramDepends = $depends;
         return $this;
     }
 
     /**
      * Получение доп. заголовков вызываемого метода АПИ
      * @param $action
-     * @return array
+     * @return $this
      * @throws
      */
-    private function getHeaders($action)
+    final public function setHeaders($action)
     {
         $headers = [];
         $methodName = $action->actionMethod;
@@ -176,18 +202,19 @@ class AbstractApi
                 $this->setParamRule($rule);
             }
         }
-        return array_merge($this->requiredHeaders, array_unique($headers));
+        $this->headers = array_merge($this->requiredHeaders, array_unique($headers));
+        $this->action = $action;
+        return $this;
     }
 
     /**
      * Проверка валидности всех необходимых заголовков вызываемого метода
-     * @param $action
      * @return bool
      * @throws
      */
-    public function validateHeaders($action)
+    public function validateHeaders()
     {
-        foreach ($this->getHeaders($action) as $header) {
+        foreach ($this->headers as $header) {
             $value = Yii::$app->request->getHeaders()->get($header, 'null');
             if (!$value || $value === 'null') {
                 if (!$this->validateRule($header, $value)) {
@@ -231,17 +258,16 @@ class AbstractApi
             $commonException = Configs::instance()->commonException;
             throw new $commonException(Configs::instance()->headersError);
         }
-        $this->checkDepends();
+        $this->checkHeaderDepends();
         return true;
     }
 
     /**
      * Проверка валидности всех необходимых параметров вызываемого метода
-     * @param $action
      * @return bool
      * @throws
      */
-    public function validateParams($action)
+    public function validateParams()
     {
         foreach ($this->paramRules as $attribute => $rule) {
             $value = Yii::$app->getRequest()->get($attribute);
@@ -290,8 +316,8 @@ class AbstractApi
             $commonException = Configs::instance()->commonException;
             throw new $commonException(Configs::instance()->paramsError);
         }
+        $this->checkParamDepends();
         return true;
-
     }
 
     /**
@@ -343,19 +369,44 @@ class AbstractApi
      * Проверяем зависимости заголовков друг от друга
      * @throws
      */
-    private function checkDepends()
+    private function checkHeaderDepends()
     {
-        foreach ($this->depends as $header => $dependAttributes) {
+        foreach ($this->headerDepends as $header => $dependAttributes) {
             $headerAlias = array_key_exists($header, $this->headerMap) ? $this->headerMap[$header] : $header;
             $entity = Yii::$app->get(Inflector::relatify($headerAlias));
-            if (!$entity->getId()) {
+            if (!$entity->id) {
                 continue;
             }
             foreach ($dependAttributes as $attribute => $depend) {
                 $relation = Yii::$app->get($depend['relation']);
                 if ($entity->{$attribute} != $relation->{$depend['attribute']}) {
+                    $this->invalidHeaders[] = $header;
                     $commonException = Configs::instance()->commonException;
-                    throw new $commonException($depend['errorCode'] ?? Configs::instance()->compareError);
+                    throw new $commonException(Configs::instance()->headersError);
+                }
+            }
+        }
+    }
+
+    /**
+     * Проверяем зависимости заголовков друг от друга
+     * @throws
+     */
+    private function checkParamDepends()
+    {
+        foreach ($this->paramRules as $param => $rule) {
+            $dependAttributes = $this->paramDepends[$param];
+            $paramAlias = array_key_exists($param, $this->paramMap) ? $this->paramMap[$param] : $param;
+            $entity = Yii::$app->get(Inflector::relatify($paramAlias));
+            if (!$entity->id) {
+                continue;
+            }
+            foreach ($dependAttributes as $attribute => $depend) {
+                $relation = Yii::$app->get($depend['relation']);
+                if ($entity->{$attribute} != $relation->{$depend['attribute']}) {
+                    $this->invalidParams[] = $param;
+                    $commonException = Configs::instance()->commonException;
+                    throw new $commonException(Configs::instance()->paramsError);
                 }
             }
         }
