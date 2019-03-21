@@ -271,6 +271,9 @@ class AbstractApi
     {
         foreach ($this->paramRules as $attribute => $rule) {
             $value = Yii::$app->getRequest()->get($attribute);
+            if (empty($value) && isset($rule['skipEmpty']) && in_array($rule['skipEmpty'], [true, 'true'])) {
+                continue;
+            }
             switch ($rule['type']) {
                 case 'enum':
                     if (!in_array($value, $rule['range'])) {
