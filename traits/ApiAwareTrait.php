@@ -115,6 +115,14 @@ trait ApiAwareTrait
     /**
      * @return mixed
      */
+    final protected function getInvalidParams()
+    {
+        return $this->invalidParams;
+    }
+
+    /**
+     * @return mixed
+     */
     final protected function getMissingHeaders()
     {
         return $this->missingHeaders;
