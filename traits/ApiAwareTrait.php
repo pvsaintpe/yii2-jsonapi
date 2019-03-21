@@ -22,6 +22,11 @@ trait ApiAwareTrait
     protected $invalidHeaders = [];
 
     /**
+     * @var array
+     */
+    protected $invalidParams = [];
+
+    /**
      * Обязательные заголовки
      * @return array
      *
@@ -62,6 +67,18 @@ trait ApiAwareTrait
     public $headerMap = [];
 
     /**
+     * @var array
+     *
+     * @example ```php
+     *    ['Auth-Token' => 'Client']
+     * ```
+     *
+     * Затем в вашем классе АПИ (extends AbstractApi) необходимо реализовать методы:
+     *  -
+     */
+    public $paramMap = [];
+
+    /**
      * @param mixed $action
      * @throws
      * @return bool
@@ -74,13 +91,15 @@ trait ApiAwareTrait
             ->setRequiredHeaders($this->requiredHeaders)
             ->setDepends($this->depends)
             ->setHeaderMap($this->headerMap)
+            ->setParamMap($this->paramMap)
         ;
 
         try {
-            return $api->validateHeaders($action);
+            return $api->validateHeaders($action) && $api->validateParams($action);
         } catch (\Exception $e) {
             $this->missingHeaders = $api->getMissingHeaders();
             $this->invalidHeaders = $api->getInvalidHeaders();
+            $this->invalidParams = $api->getInvalidParams();
             throw $e;
         }
     }

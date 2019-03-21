@@ -22,6 +22,18 @@ class AbstractApi
     private $requiredHeaders = [];
 
     /**
+     * Правила валидации параметров
+     * @var array
+     */
+    private $paramRules = [];
+
+    /**
+     * Маппинг для параметров и методов их проверки
+     * @var array
+     */
+    private $paramMap = [];
+
+    /**
      * Правила валидации заголовков
      * @var array
      */
@@ -52,6 +64,12 @@ class AbstractApi
     private $invalidHeaders = [];
 
     /**
+     * Плохие параметры (неверные значения)
+     * @var array
+     */
+    private $invalidParams = [];
+
+    /**
      * @var self Instance of self
      */
     private static $instance;
@@ -79,6 +97,16 @@ class AbstractApi
     }
 
     /**
+     * @param array $paramMap
+     * @return $this
+     */
+    public function setParamMap($paramMap)
+    {
+        $this->paramMap = $paramMap;
+        return $this;
+    }
+
+    /**
      * @param string $name
      * @param array $rule
      * @return $this
@@ -86,6 +114,16 @@ class AbstractApi
     public function setHeaderRule($name, $rule)
     {
         $this->headerRules[$name] = $rule;
+        return $this;
+    }
+
+    /**
+     * @param array $rule
+     * @return $this
+     */
+    public function setParamRule($rule)
+    {
+        $this->paramRules = array_merge($this->paramRules, $rule);
         return $this;
     }
 
@@ -132,6 +170,10 @@ class AbstractApi
                 $rule = json_decode(trim($tag->getContent(), '()'), 1);
                 $name = array_shift($rule);
                 $this->setHeaderRule($name, $rule);
+            }
+            if ($tag->getName() == 'paramRule') {
+                $rule = json_decode(trim($tag->getContent(), '()'), 1);
+                $this->setParamRule($rule);
             }
         }
         return array_merge($this->requiredHeaders, array_unique($headers));
@@ -194,6 +236,65 @@ class AbstractApi
     }
 
     /**
+     * Проверка валидности всех необходимых параметров вызываемого метода
+     * @param $action
+     * @return bool
+     * @throws
+     */
+    public function validateParams($action)
+    {
+        foreach ($this->paramRules as $attribute => $rule) {
+            $value = Yii::$app->getRequest()->get($attribute);
+            switch ($rule['type']) {
+                case 'enum':
+                    if (!in_array($value, $rule['range'])) {
+                        $this->invalidParams[] = $attribute;
+                    }
+                    break;
+                case 'component':
+                    $methodCheck = Inflector::checkify($attribute);
+                    if (method_exists($this, $methodCheck)) {
+                        if (!call_user_func_array([$this, $methodCheck], [$value])) {
+                            $this->invalidParams[] = $attribute;
+                            break;
+                        }
+                        $paramAlias = array_key_exists($attribute, $this->paramMap) ? $this->paramMap[$attribute] : $attribute;
+                        $component = Inflector::relatify($paramAlias);
+                        $methodGet = Inflector::gettify($paramAlias);
+                        if (method_exists($this, $methodGet)) {
+                            if (($model = call_user_func_array([$this, $methodGet], [$value]))) {
+                                Yii::$app->setComponents([
+                                    $component => array_merge(
+                                        ['class' => $model::className()],
+                                        $model->getAttributes()
+                                    )
+                                ]);
+                                Yii::$app->get($component)->setIsNewRecord(false);
+                            } else {
+                                $this->invalidParams[] = $attribute;
+                                break;
+                            }
+                        }
+                        $methodInit = Inflector::initify($paramAlias);
+                        if (method_exists($this, $methodInit)) {
+                            call_user_func_array([$this, $methodInit], [$value]);
+                        }
+                    } else {
+                        $commonException = Configs::instance()->commonException;
+                        throw new $commonException(Configs::instance()->checkError);
+                    }
+                    break;
+            }
+        }
+        if ($this->getInvalidParams()) {
+            $commonException = Configs::instance()->commonException;
+            throw new $commonException(Configs::instance()->paramsError);
+        }
+        return true;
+
+    }
+
+    /**
      * @param string $header
      * @param mixed $value
      * @return bool
@@ -223,6 +324,17 @@ class AbstractApi
     {
         if (is_array($this->invalidHeaders) && count($this->invalidHeaders) > 0) {
             return join(', ', $this->invalidHeaders);
+        }
+        return null;
+    }
+
+    /**
+     * @return string
+     */
+    public function getInvalidParams()
+    {
+        if (is_array($this->invalidParams) && count($this->invalidParams) > 0) {
+            return join(', ', $this->invalidParams);
         }
         return null;
     }

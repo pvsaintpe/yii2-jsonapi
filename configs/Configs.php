@@ -66,6 +66,11 @@ class Configs extends BaseObject
     /**
      * @var string
      */
+    public $paramsError = 'Неверные параметры';
+
+    /**
+     * @var string
+     */
     public $requestError = 'Неверный запрос';
 
     /**
