@@ -412,13 +412,12 @@ class AbstractApi
                     throw new $commonException(Configs::instance()->paramsError);
                 }
             }
-            if ($ruleDepends = $rule['depends']) {
-                foreach ($ruleDepends as $relationAttribute => $value) {
-                    if ($entity->{$relationAttribute} != $value) {
-                        $this->invalidParams[] = $param;
-                        $commonException = Configs::instance()->commonException;
-                        throw new $commonException(Configs::instance()->paramsError);
-                    }
+            $ruleDepends = $rule['depends'] ?? [];
+            foreach ($ruleDepends as $relationAttribute => $value) {
+                if ($entity->{$relationAttribute} != $value) {
+                    $this->invalidParams[] = $param;
+                    $commonException = Configs::instance()->commonException;
+                    throw new $commonException(Configs::instance()->paramsError);
                 }
             }
         }
