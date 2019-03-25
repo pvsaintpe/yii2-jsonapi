@@ -276,7 +276,8 @@ class AbstractApi
             }
             switch ($rule['type']) {
                 case 'enum':
-                    if (!in_array($value, $rule['range'])) {
+                    $strict = isset($rule['strict']) && in_array($rule['strict'], [true, 'true']);
+                    if (!in_array($value, $rule['range'] ?? [], $strict)) {
                         $this->invalidParams[] = $attribute;
                     }
                     break;
@@ -398,6 +399,9 @@ class AbstractApi
     private function checkParamDepends()
     {
         foreach ($this->paramRules as $param => $rule) {
+            if ($rule['type'] != 'component') {
+                continue;
+            }
             $dependAttributes = $this->paramDepends[$param];
             $paramAlias = array_key_exists($param, $this->paramMap) ? $this->paramMap[$param] : $param;
             $entity = Yii::$app->get(Inflector::relatify($paramAlias));

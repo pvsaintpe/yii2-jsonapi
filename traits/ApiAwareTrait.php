@@ -12,19 +12,19 @@ use pvsaintpe\jsonapi\configs\Configs;
 trait ApiAwareTrait
 {
     /**
-     * @var array
+     * @var string|null
      */
-    protected $missingHeaders = [];
+    protected $missingHeaders;
 
     /**
-     * @var array
+     * @var string|null
      */
-    protected $invalidHeaders = [];
+    protected $invalidHeaders;
 
     /**
-     * @var array
+     * @var string|null
      */
-    protected $invalidParams = [];
+    protected $invalidParams;
 
     /**
      * @var array
@@ -80,7 +80,7 @@ trait ApiAwareTrait
     }
 
     /**
-     * @return mixed
+     * @return string|null
      */
     final protected function getInvalidHeaders()
     {
@@ -88,7 +88,7 @@ trait ApiAwareTrait
     }
 
     /**
-     * @return mixed
+     * @return string|null
      */
     final protected function getInvalidParams()
     {
@@ -96,7 +96,7 @@ trait ApiAwareTrait
     }
 
     /**
-     * @return mixed
+     * @return string|null
      */
     final protected function getMissingHeaders()
     {
