@@ -208,7 +208,7 @@ abstract class AbstractController extends Controller
     private function initRequest($id)
     {
         list($contentType) = explode(";", Yii::$app->request->getContentType()); //cut charset
-        if (!empty($id) || !Yii::$app->request->getIsPost() || empty($contentType) || $contentType != "application/json")
+        if (!empty($id) || !Yii::$app->request->getIsPost() || empty($contentType) || $contentType != "application/x-www-form-urlencoded")
             throw new HttpException(404, Configs::instance()->pageError);
     }
 
